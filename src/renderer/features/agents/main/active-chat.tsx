@@ -922,7 +922,7 @@ interface DiffSidebarContentProps {
   setDiffStats: (stats: { isLoading: boolean; hasChanges: boolean; fileCount: number; additions: number; deletions: number }) => void
   diffContent: string | null
   parsedFileDiffs: unknown
-  prefetchedFileContents: Map<string, string> | undefined
+  prefetchedFileContents: Record<string, string> | undefined
   setDiffCollapseState: (state: Map<string, boolean>) => void
   diffViewRef: React.RefObject<{ expandAll: () => void; collapseAll: () => void } | null>
   agentChat: { prUrl?: string; prNumber?: number } | null | undefined
@@ -1110,7 +1110,7 @@ function DiffSidebarContent({
   const shouldUseCommitDiff = activeTab === "history" && selectedCommit
   const effectiveDiff = shouldUseCommitDiff && commitFileDiff ? commitFileDiff : diffContent
   const effectiveParsedFiles = shouldUseCommitDiff ? null : parsedFileDiffs
-  const effectivePrefetchedContents = shouldUseCommitDiff ? new Map() : prefetchedFileContents
+  const effectivePrefetchedContents = shouldUseCommitDiff ? {} : prefetchedFileContents
 
   if (isNarrow) {
     // Count changed files for collapsed header
@@ -3993,6 +3993,21 @@ Make sure to preserve all functionality from both branches when resolving confli
     { worktreePath: worktreePath || "" },
     { enabled: !!worktreePath && isDiffSidebarOpen, staleTime: 30000 }
   )
+
+  // Refetch git status and diff stats when window gains focus
+  useEffect(() => {
+    if (!worktreePath || !isDiffSidebarOpen) return
+
+    const handleWindowFocus = () => {
+      // Refetch git status
+      refetchGitStatus()
+      // Refetch diff stats to get latest changes
+      fetchDiffStats()
+    }
+
+    window.addEventListener('focus', handleWindowFocus)
+    return () => window.removeEventListener('focus', handleWindowFocus)
+  }, [worktreePath, isDiffSidebarOpen, refetchGitStatus, fetchDiffStats])
 
   // Sync parsedFileDiffs with git status - clear diff data when all files are committed
   // This fixes the issue where diff sidebar shows stale files after external git commit
