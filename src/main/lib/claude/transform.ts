@@ -1,6 +1,7 @@
-import type { UIMessageChunk, MessageMetadata, MCPServerStatus, MCPServer } from "./types"
+import type { MCPServer, MCPServerStatus, MessageMetadata, UIMessageChunk } from "./types"
 
-export function createTransformer() {
+export function createTransformer(options?: { emitSdkMessageUuid?: boolean }) {
+  const emitSdkMessageUuid = options?.emitSdkMessageUuid === true
   let textId: string | null = null
   let textStarted = false
   let started = false
@@ -73,6 +74,15 @@ export function createTransformer() {
   }
 
   return function* transform(msg: any): Generator<UIMessageChunk> {
+    // Emit UUID early for rollback support (before abort can happen)
+    // This ensures frontend has sdkMessageUuid even if streaming is interrupted
+    if (emitSdkMessageUuid && msg.type === "assistant" && msg.uuid) {
+      yield {
+        type: "message-metadata",
+        messageMetadata: { sdkMessageUuid: msg.uuid }
+      }
+    }
+
     // Debug: log ALL message types to understand what SDK sends
     console.log("[transform] MSG:", msg.type, msg.subtype || "", msg.event?.type || "")
     if (msg.type === "system") {

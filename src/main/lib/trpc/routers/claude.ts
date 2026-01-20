@@ -14,6 +14,7 @@ import {
   type UIMessageChunk,
 } from "../../claude"
 import { chats, claudeCodeCredentials, getDatabase, subChats } from "../../db"
+import { createRollbackStash } from "../../git/stash"
 import { publicProcedure, router } from "../index"
 import { buildAgentsOption } from "./agent-utils"
 
@@ -126,6 +127,7 @@ const getClaudeQuery = async () => {
   return sdk.query
 }
 
+// Active sessions for cancellation (onAbort handles stash + abort + restore)
 // Active sessions for cancellation
 const activeSessions = new Map<string, AbortController>()
 const pendingToolApprovals = new Map<
@@ -139,6 +141,11 @@ const pendingToolApprovals = new Map<
     }) => void
   }
 >()
+
+const PLAN_MODE_BLOCKED_TOOLS = new Set([
+  "Bash",
+  "NotebookEdit",
+])
 
 const clearPendingApprovals = (message: string, subChatId?: string) => {
   for (const [toolUseId, pending] of pendingToolApprovals) {
@@ -181,6 +188,7 @@ export const claudeRouter = router({
           .optional(),
         maxThinkingTokens: z.number().optional(), // Enable extended thinking
         images: z.array(imageAttachmentSchema).optional(), // Image attachments
+        historyEnabled: z.boolean().optional(),
       }),
     )
     .subscription(({ input }) => {
@@ -260,6 +268,13 @@ export const claudeRouter = router({
             const existingMessages = JSON.parse(existing?.messages || "[]")
             const existingSessionId = existing?.sessionId || null
 
+            // Get resumeSessionAt UUID from the last assistant message (for rollback)
+            const lastAssistantMsg = [...existingMessages].reverse().find(
+              (m: any) => m.role === "assistant"
+            )
+            const resumeAtUuid = lastAssistantMsg?.metadata?.sdkMessageUuid || null
+            const historyEnabled = input.historyEnabled === true
+
             // Check if last message is already this user message (avoid duplicate)
             const lastMsg = existingMessages[existingMessages.length - 1]
             const isDuplicate =
@@ -303,7 +318,9 @@ export const claudeRouter = router({
               return
             }
 
-            const transform = createTransformer()
+            const transform = createTransformer({
+              emitSdkMessageUuid: historyEnabled,
+            })
 
             // 4. Setup accumulation state
             const parts: any[] = []
@@ -501,6 +518,10 @@ export const claudeRouter = router({
             const claudeBinaryPath = getBundledClaudeBinaryPath()
 
             const resumeSessionId = input.sessionId || existingSessionId || undefined
+
+            console.log(`[claude] Session ID to resume: ${resumeSessionId} (Existing: ${existingSessionId})`)
+            console.log(`[claude] Resume at UUID: ${resumeAtUuid}`)
+            
             console.log(`[SD] Query options - cwd: ${input.cwd}, projectPath: ${input.projectPath || "(not set)"}, mcpServers: ${mcpServersForSdk ? Object.keys(mcpServersForSdk).join(", ") : "(none)"}`)
             if (input.customConfig) {
               const redactedConfig = {
@@ -541,6 +562,26 @@ export const claudeRouter = router({
                   toolInput: Record<string, unknown>,
                   options: { toolUseID: string },
                 ) => {
+                  if (input.mode === "plan") {
+                    if (toolName === "Edit" || toolName === "Write") {
+                      const filePath =
+                        typeof toolInput.file_path === "string"
+                          ? toolInput.file_path
+                          : ""
+                      if (!/\.md$/i.test(filePath)) {
+                        return {
+                          behavior: "deny",
+                          message:
+                            'Only ".md" files can be modified in plan mode.',
+                        }
+                      }
+                    } else if (PLAN_MODE_BLOCKED_TOOLS.has(toolName)) {
+                      return {
+                        behavior: "deny",
+                        message: `Tool "${toolName}" blocked in plan mode.`,
+                      }
+                    }
+                  }
                   if (toolName === "AskUserQuestion") {
                     const { toolUseID } = options
                     // Emit to UI (safely in case observer is closed)
@@ -631,7 +672,10 @@ export const claudeRouter = router({
                 pathToClaudeCodeExecutable: claudeBinaryPath,
                 ...(resumeSessionId && {
                   resume: resumeSessionId,
-                  continue: true,
+                  // Rollback support - resume at specific message UUID (from DB)
+                  ...(resumeAtUuid
+                    ? { resumeSessionAt: resumeAtUuid }
+                    : { continue: true }),
                 }),
                 ...(resolvedModel && { model: resolvedModel }),
                 // fallbackModel: "claude-opus-4-5-20251101",
@@ -734,7 +778,7 @@ export const claudeRouter = router({
                   return
                 }
 
-                // Track sessionId
+                // Track sessionId and uuid for rollback support (available on all messages)
                 if (msgAny.session_id) {
                   metadata.sessionId = msgAny.session_id
                   currentSessionId = msgAny.session_id // Share with cleanup
@@ -801,6 +845,7 @@ export const claudeRouter = router({
                       )
                       if (toolPart) {
                         toolPart.result = chunk.output
+                        toolPart.output = chunk.output // Backwards compatibility for the UI that relies on output field
                         toolPart.state = "result"
 
                         // Notify renderer about file changes for Write/Edit tools
@@ -976,6 +1021,11 @@ export const claudeRouter = router({
                   .set({ updatedAt: new Date() })
                   .where(eq(chats.id, input.chatId))
                   .run()
+
+                // Create snapshot stash for rollback support (on error)
+                if (historyEnabled && metadata.sdkMessageUuid && input.cwd) {
+                  await createRollbackStash(input.cwd, metadata.sdkMessageUuid)
+                }
               }
 
               console.log(`[SD] M:END sub=${subId} reason=stream_error cat=${errorCategory} n=${chunkCount} last=${lastChunkType}`)
@@ -1041,6 +1091,11 @@ export const claudeRouter = router({
               .set({ updatedAt: new Date() })
               .where(eq(chats.id, input.chatId))
               .run()
+
+            // Create snapshot stash for rollback support
+            if (historyEnabled && metadata.sdkMessageUuid && input.cwd) {
+              await createRollbackStash(input.cwd, metadata.sdkMessageUuid)
+            }
 
             const duration = ((Date.now() - streamStart) / 1000).toFixed(1)
             const reason = planCompleted ? "plan_complete" : "ok"

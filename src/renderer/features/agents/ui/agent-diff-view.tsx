@@ -314,6 +314,8 @@ const fileDiffCardAreEqual = (
 ): boolean => {
   // Key comparison - file identity
   if (prev.file.key !== next.file.key) return false
+  // Diff content changes should re-render even when the file key is stable.
+  if (prev.file.diffText !== next.file.diffText) return false
   // State that affects rendering
   if (prev.isCollapsed !== next.isCollapsed) return false
   if (prev.isFullExpanded !== next.isFullExpanded) return false

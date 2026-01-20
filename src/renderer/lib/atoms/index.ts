@@ -217,6 +217,15 @@ export const extendedThinkingEnabledAtom = atomWithStorage<boolean>(
   { getOnInit: true },
 )
 
+// Preferences - History (Rollback)
+// When enabled, allow rollback to previous assistant messages
+export const historyEnabledAtom = atomWithStorage<boolean>(
+  "preferences:history-enabled",
+  false,
+  undefined,
+  { getOnInit: true },
+)
+
 // Preferences - Sound Notifications
 // When enabled, play a sound when agent completes work (if not viewing the chat)
 export const soundNotificationsEnabledAtom = atomWithStorage<boolean>(
