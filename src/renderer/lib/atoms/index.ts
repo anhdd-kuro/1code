@@ -334,6 +334,26 @@ export const soundNotificationsEnabledAtom = atomWithStorage<boolean>(
   { getOnInit: true },
 )
 
+// Preferences - Desktop Notifications (Windows)
+// When enabled, show Windows desktop notification when agent completes work
+export const desktopNotificationsEnabledAtom = atomWithStorage<boolean>(
+  "preferences:desktop-notifications-enabled",
+  true,
+  undefined,
+  { getOnInit: true },
+)
+
+// Preferences - Windows Window Frame Style
+// When true, uses native frame (standard Windows title bar)
+// When false, uses frameless window (dark custom title bar)
+// Only applies on Windows, requires app restart to take effect
+export const useNativeFrameAtom = atomWithStorage<boolean>(
+  "preferences:windows-use-native-frame",
+  false, // Default: frameless (dark title bar)
+  undefined,
+  { getOnInit: true },
+)
+
 // Preferences - Analytics Opt-out
 // When true, user has opted out of analytics tracking
 export const analyticsOptOutAtom = atomWithStorage<boolean>(

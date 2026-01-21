@@ -6,10 +6,12 @@ import { useAtom, useAtomValue } from "jotai"
 import { ChevronDown, WifiOff } from "lucide-react"
 
 import { Button } from "../../../components/ui/button"
+import { Switch } from "../../../components/ui/switch"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu"
 import {
@@ -55,6 +57,7 @@ import {
   activeConfigAtom,
   autoOfflineModeAtom,
   showOfflineModeFeaturesAtom,
+  extendedThinkingEnabledAtom,
 } from "../../../lib/atoms"
 import { trpc } from "../../../lib/trpc"
 
@@ -366,6 +369,9 @@ export const ChatInputArea = memo(function ChatInputArea({
   const normalizedCustomClaudeConfig =
     normalizeCustomClaudeConfig(customClaudeConfig)
   const hasCustomClaudeConfig = Boolean(normalizedCustomClaudeConfig)
+
+  // Extended thinking (reasoning) toggle
+  const [thinkingEnabled, setThinkingEnabled] = useAtom(extendedThinkingEnabledAtom)
 
   // Auto-switch model based on network status (only if offline features enabled)
   useEffect(() => {
@@ -972,6 +978,18 @@ export const ChatInputArea = memo(function ChatInputArea({
                           </DropdownMenuItem>
                         )
                       })}
+                      <DropdownMenuSeparator />
+                      <div
+                        className="flex items-center justify-between px-2 py-1.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="text-sm">Thinking</span>
+                        <Switch
+                          checked={thinkingEnabled}
+                          onCheckedChange={setThinkingEnabled}
+                          className="scale-75"
+                        />
+                      </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
