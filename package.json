@@ -16,6 +16,10 @@
     "package:mac": "electron-builder --mac",
     "package:win": "electron-builder --win",
     "package:linux": "electron-builder --linux",
+    "package:mac:open": "open release/mac-arm64/1Code.app",
+    "package:mac:install": "rm -rf /Applications/1Code.app && cp -R release/mac-arm64/1Code.app /Applications/",
+    "package:mac:rebuild": "bun run build && bun run package:mac && bun run package:mac:install",
+    "package:mac:universal": "electron-builder --mac --arm64 --x64",
     "dist": "electron-builder",
     "dist:manifest": "node scripts/generate-update-manifest.mjs",
     "dist:upload": "node scripts/upload-release.mjs",
@@ -176,15 +180,13 @@
         {
           "target": "dmg",
           "arch": [
-            "arm64",
-            "x64"
+            "arm64"
           ]
         },
         {
           "target": "zip",
           "arch": [
-            "arm64",
-            "x64"
+            "arm64"
           ]
         }
       ],

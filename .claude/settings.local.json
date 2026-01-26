@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(xcode-select:*)",
+      "Bash(electron-builder:*)",
+      "Bash(./node_modules/.bin/electron-builder:*)",
+      "Bash(ls:*)",
+      "mcp__github__fork_repository",
+      "Bash(git remote rename:*)",
+      "Bash(git remote add:*)",
+      "Bash(open \"macappstore://apps.apple.com/app/xcode/id497799835\")",
+      "Bash(sudo xcode-select:*)",
+      "Bash(git config:*)",
+      "Bash(gh repo view:*)"
+    ]
+  }
+}
