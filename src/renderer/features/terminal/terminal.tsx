@@ -313,6 +313,12 @@ export function Terminal({
       onPaste: (text) => {
         commandBufferRef.current += text
       },
+      onCopyError: () => {
+        toast.error("Failed to copy to clipboard")
+      },
+      onPasteError: () => {
+        toast.error("Failed to paste from clipboard")
+      },
     })
 
     // Cleanup on unmount

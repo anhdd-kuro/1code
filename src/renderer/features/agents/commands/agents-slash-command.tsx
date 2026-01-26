@@ -152,9 +152,9 @@ export const AgentsSlashCommand = memo(function AgentsSlashCommand({
       )
     }
 
-    // Sort all commands by name length (shorter = closer match)
+    // Sort all commands by name length (shorter = closer match), then alphabetically for stability
     return [...customFiltered, ...builtinFiltered].sort(
-      (a, b) => a.name.length - b.name.length,
+      (a, b) => a.name.length - b.name.length || a.name.localeCompare(b.name),
     )
   }, [debouncedSearchText, customCommands, mode, disabledCommands])
 

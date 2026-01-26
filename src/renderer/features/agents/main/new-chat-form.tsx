@@ -38,6 +38,7 @@ import {
   lastSelectedRepoAtom,
   lastSelectedWorkModeAtom,
   selectedAgentChatIdAtom,
+  selectedChatIsRemoteAtom,
   selectedDraftIdAtom,
   selectedProjectAtom,
   getNextMode,
@@ -57,6 +58,7 @@ import {
   showOfflineModeFeaturesAtom,
   selectedOllamaModelAtom,
   customHotkeysAtom,
+  chatSourceModeAtom,
 } from "../../../lib/atoms"
 // Desktop uses real tRPC
 import { toast } from "sonner"
@@ -176,6 +178,8 @@ export function NewChatForm({
   const [hasContent, setHasContent] = useState(false)
   const [selectedTeamId] = useAtom(selectedTeamIdAtom)
   const [selectedChatId, setSelectedChatId] = useAtom(selectedAgentChatIdAtom)
+  const setSelectedChatIsRemote = useSetAtom(selectedChatIsRemoteAtom)
+  const setChatSourceMode = useSetAtom(chatSourceModeAtom)
   const [selectedDraftId, setSelectedDraftId] = useAtom(selectedDraftIdAtom)
   const [sidebarOpen, setSidebarOpen] = useAtom(agentsSidebarOpenAtom)
 
@@ -217,12 +221,9 @@ export function NewChatForm({
     lastSelectedModelIdAtom,
   )
   // Mode for new chat - uses user's default preference directly
+  // Note: defaultAgentMode is initialized synchronously via atomWithStorage with getOnInit: true
   const defaultAgentMode = useAtomValue(defaultAgentModeAtom)
-  const [agentMode, setAgentMode] = useState<AgentMode>("agent")
-  // Sync to user's default preference (handles async hydration from localStorage)
-  useEffect(() => {
-    setAgentMode(defaultAgentMode)
-  }, [defaultAgentMode])
+  const [agentMode, setAgentMode] = useState<AgentMode>(() => defaultAgentMode)
   // Toggle mode helper
   const toggleMode = useCallback(() => {
     setAgentMode(getNextMode)
@@ -882,6 +883,9 @@ export function NewChatForm({
       clearCurrentDraft()
       utils.chats.list.invalidate()
       setSelectedChatId(data.id)
+      // New chats are always local
+      setSelectedChatIsRemote(false)
+      setChatSourceMode("local")
       // Track this chat and its first subchat as just created for typewriter effect
       const ids = [data.id]
       if (data.subChats?.[0]?.id) {
@@ -1851,6 +1855,7 @@ export function NewChatForm({
                           )}
                           onClick={handleSend}
                           mode={agentMode}
+                          hasContent={hasContent}
                           showVoiceInput={isVoiceAvailable}
                           isRecording={isVoiceRecording}
                           isTranscribing={isTranscribing}

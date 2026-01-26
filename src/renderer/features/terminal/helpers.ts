@@ -440,6 +440,10 @@ export interface ContextMenuHandlerOptions {
   onCopy?: (text: string) => void
   /** Callback when text is pasted via context menu */
   onPaste?: (text: string) => void
+  /** Callback when copy fails */
+  onCopyError?: (error: unknown) => void
+  /** Callback when paste fails */
+  onPasteError?: (error: unknown) => void
 }
 
 /**
@@ -453,6 +457,11 @@ export function setupContextMenuHandler(
   xterm: XTerm,
   options: ContextMenuHandlerOptions = {}
 ): () => void {
+  const element = xterm.element
+  if (!element) {
+    return () => {} // noop cleanup if element not available
+  }
+
   const handleContextMenu = async (event: MouseEvent) => {
     event.preventDefault()
 
@@ -467,6 +476,7 @@ export function setupContextMenuHandler(
         xterm.clearSelection()
       } catch (err) {
         console.warn("[Terminal] Failed to copy to clipboard:", err)
+        options.onCopyError?.(err)
       }
     } else {
       // No selection - paste from clipboard
@@ -478,13 +488,14 @@ export function setupContextMenuHandler(
         }
       } catch (err) {
         console.warn("[Terminal] Failed to paste from clipboard:", err)
+        options.onPasteError?.(err)
       }
     }
   }
 
-  xterm.element?.addEventListener("contextmenu", handleContextMenu)
+  element.addEventListener("contextmenu", handleContextMenu)
 
   return () => {
-    xterm.element?.removeEventListener("contextmenu", handleContextMenu)
+    element.removeEventListener("contextmenu", handleContextMenu)
   }
 }

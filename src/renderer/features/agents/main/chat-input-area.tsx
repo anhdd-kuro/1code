@@ -533,17 +533,9 @@ export const ChatInputArea = memo(function ChatInputArea({
           .replace(/[\r\n\t]+/g, " ")
           .replace(/ +/g, " ")
           .trim()
-
-        console.log("[VoiceInput] Raw result.text:", JSON.stringify(result.text))
-        console.log("[VoiceInput] Cleaned transcribed:", JSON.stringify(transcribed))
-        console.log("[VoiceInput] Current editor value:", JSON.stringify(current))
-
         // Add space separator only if current text exists and doesn't end with whitespace
         const needsSpace = current.length > 0 && !/\s$/.test(current)
         const newValue = current + (needsSpace ? " " : "") + transcribed
-
-        console.log("[VoiceInput] Final newValue:", JSON.stringify(newValue))
-
         editorRef.current?.setValue(newValue)
         editorRef.current?.focus()
       }

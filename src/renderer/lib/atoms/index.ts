@@ -441,6 +441,22 @@ export const autoAdvanceTargetAtom = atomWithStorage<AutoAdvanceTarget>(
 // Controls what mode new chats/sub-chats start in (Plan = read-only, Agent = can edit)
 // Re-using AgentMode type from features/agents/atoms
 import { type AgentMode as AgentModeType } from "../../features/agents/atoms"
+
+// Migration: convert old isPlanMode boolean to new defaultAgentMode string
+// This runs once when the module loads
+if (typeof window !== "undefined") {
+  const oldKey = "agents:isPlanMode"
+  const newKey = "preferences:default-agent-mode"
+  const oldValue = localStorage.getItem(oldKey)
+  if (oldValue !== null && localStorage.getItem(newKey) === null) {
+    // Old value was JSON boolean, new value is JSON string
+    const wasInPlanMode = oldValue === "true"
+    localStorage.setItem(newKey, JSON.stringify(wasInPlanMode ? "plan" : "agent"))
+    localStorage.removeItem(oldKey)
+    console.log("[atoms] Migrated isPlanMode to defaultAgentMode:", wasInPlanMode ? "plan" : "agent")
+  }
+}
+
 export const defaultAgentModeAtom = atomWithStorage<AgentModeType>(
   "preferences:default-agent-mode",
   "agent", // Default to agent mode
@@ -721,6 +737,20 @@ export type SessionInfo = {
 export const sessionInfoAtom = atomWithStorage<SessionInfo | null>(
   "21st-session-info",
   null,
+  undefined,
+  { getOnInit: true },
+)
+
+// ============================================
+// CHAT SOURCE MODE (Local vs Sandbox)
+// ============================================
+
+// Chat source toggle: "local" = worktree chats (SQLite), "sandbox" = remote sandbox chats
+export type ChatSourceMode = "local" | "sandbox"
+
+export const chatSourceModeAtom = atomWithStorage<ChatSourceMode>(
+  "agents:chat-source-mode",
+  "local",
   undefined,
   { getOnInit: true },
 )

@@ -130,8 +130,7 @@ export const BUILTIN_SLASH_COMMANDS: SlashCommandOption[] = [
 ]
 
 /**
- * Filter builtin commands by search text and sort by relevance
- * Sorting: shorter command names first (closer match to what user typed)
+ * Filter builtin commands by search text
  */
 export function filterBuiltinCommands(
   searchText: string,
@@ -143,5 +142,5 @@ export function filterBuiltinCommands(
     (cmd) =>
       cmd.name.toLowerCase().includes(query) ||
       cmd.description.toLowerCase().includes(query),
-  ).sort((a, b) => a.name.length - b.name.length)
+  )
 }

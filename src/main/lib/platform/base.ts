@@ -149,7 +149,7 @@ export abstract class BasePlatformProvider implements PlatformProvider {
   ): Promise<{ stdout: string; stderr: string }> {
     const { stdout, stderr } = await execFileAsync(command, args, {
       timeout: options?.timeout ?? 5000,
-      env: options?.env,
+      env: options?.env as NodeJS.ProcessEnv | undefined,
       encoding: "utf8",
     })
     return { stdout, stderr }
