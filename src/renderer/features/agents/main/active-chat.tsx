@@ -3933,8 +3933,8 @@ const ChatViewInner = memo(function ChatViewInner({
           />
         )}
 
-        {/* Quick comment input */}
-        {quickCommentState && (
+        {/* Quick comment input - only render for active tab to prevent portal escaping pointerEvents isolation */}
+        {isActive && quickCommentState && (
           <QuickCommentInput
             selectedText={quickCommentState.selectedText}
             source={quickCommentState.source}
