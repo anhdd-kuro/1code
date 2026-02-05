@@ -1412,7 +1412,10 @@ export const ChatInputArea = memo(function ChatInputArea({
                             {hasCustomClaudeConfig ? (
                               "Custom Model"
                             ) : (
-                              selectedModel?.name
+                              <>
+                                {selectedModel?.name}{" "}
+                                <span className="text-muted-foreground">{selectedModel?.version}</span>
+                              </>
                             )}
                           </span>
                           <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
@@ -1432,7 +1435,10 @@ export const ChatInputArea = memo(function ChatInputArea({
                             >
                               <div className="flex items-center gap-1.5">
                                 <ClaudeCodeIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                <span>{model.name}</span>
+                                <span>
+                                  {model.name}{" "}
+                                  <span className="text-muted-foreground">{model.version}</span>
+                                </span>
                               </div>
                               {isSelected && (
                                 <CheckIcon className="h-3.5 w-3.5 shrink-0" />

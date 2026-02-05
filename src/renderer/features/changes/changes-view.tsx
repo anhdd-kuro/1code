@@ -22,7 +22,7 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { trpc } from "../../lib/trpc";
 import { preferredEditorAtom } from "../../lib/atoms";
 import { APP_META } from "../../../shared/external-apps";
-import { fileViewerOpenAtomFamily, diffViewDisplayModeAtom, diffSidebarOpenAtomFamily } from "../agents/atoms";
+import { fileViewerOpenAtomFamily, diffViewDisplayModeAtom, diffSidebarOpenAtomFamily, diffActiveTabAtom } from "../agents/atoms";
 import { useChangesStore } from "../../lib/stores/changes-store";
 import { usePRStatus } from "../../hooks/usePRStatus";
 import { useFileChangeListener } from "../../lib/hooks/use-file-change-listener";
@@ -229,6 +229,8 @@ const ChangesFileItemWithContext = memo(function ChangesFileItemWithContext({
 
 interface ChangesViewProps {
 	worktreePath: string;
+	/** Controlled active tab (optional) */
+	activeTab?: "changes" | "history";
 	selectedFilePath?: string | null;
 	onFileSelect?: (
 		file: ChangedFile,
@@ -266,6 +268,7 @@ interface ChangesViewProps {
 
 export function ChangesView({
 	worktreePath,
+	activeTab: controlledActiveTab,
 	selectedFilePath,
 	onFileSelect: onFileSelectProp,
 	onFileOpenPinned,
@@ -411,9 +414,22 @@ export function ChangesView({
 
 	const [fileFilter, setFileFilter] = useState("");
 	const [subChatFilter, setSubChatFilter] = useState<string | null>(initialSubChatFilter);
-	const [activeTab, setActiveTab] = useState<"changes" | "history">("changes");
+	const [internalActiveTab, setInternalActiveTab] = useState<"changes" | "history">("changes");
+	const activeTab = controlledActiveTab ?? internalActiveTab;
 	const fileListRef = useRef<HTMLDivElement>(null);
 	const prevAllPathsRef = useRef<Set<string>>(new Set());
+
+	const handleActiveTabChange = useCallback((newTab: "changes" | "history") => {
+		// Update internal state only in uncontrolled mode
+		if (controlledActiveTab === undefined) {
+			setInternalActiveTab(newTab);
+		}
+		// Always notify parent and reset selected commit when leaving History
+		onActiveTabChange?.(newTab);
+		if (newTab === "changes" && onCommitSelect) {
+			onCommitSelect(null);
+		}
+	}, [controlledActiveTab, onActiveTabChange, onCommitSelect]);
 
 	// Update subchat filter when initialSubChatFilter changes (e.g., from Review button)
 	useEffect(() => {
@@ -771,7 +787,7 @@ export function ChangesView({
 	}, [filteredFiles, highlightedFiles]);
 
 	if (!worktreePath) {
-		return (
+	return (
 			<div className="flex-1 flex items-center justify-center text-muted-foreground text-sm p-4">
 				No worktree path available
 			</div>
@@ -779,7 +795,7 @@ export function ChangesView({
 	}
 
 	if (isLoading) {
-		return (
+	return (
 			<div className="flex-1 flex items-center justify-center text-muted-foreground text-sm p-4">
 				Loading changes...
 			</div>
@@ -878,22 +894,16 @@ export function ChangesView({
 	};
 
 	return (
-		<>
-			<div className="flex flex-col h-full">
-				<Tabs
-					value={activeTab}
-					onValueChange={(v) => {
-						const newTab = v as "changes" | "history";
-						setActiveTab(newTab);
-						// Notify parent about tab change
-						onActiveTabChange?.(newTab);
-						// Reset selected commit when switching to Changes tab
-						if (v === "changes" && onCommitSelect) {
-							onCommitSelect(null);
-						}
-					}}
-					className="flex flex-col h-full"
-				>
+			<>
+				<div className="flex flex-col h-full">
+					<Tabs
+						value={activeTab}
+						onValueChange={(v) => {
+							const newTab = v as "changes" | "history";
+							handleActiveTabChange(newTab);
+						}}
+						className="flex flex-col h-full"
+					>
 					{/* Tab triggers */}
 					<TabsList className="h-8 px-2 bg-transparent border-b border-border/50 rounded-none justify-start gap-1 shrink-0">
 						<TabsTrigger

@@ -152,25 +152,30 @@ export const SubChatStatusCard = memo(function SubChatStatusCard({
       <div
         role="button"
         tabIndex={0}
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => hasExpandableContent && setIsExpanded(!isExpanded)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (hasExpandableContent && (e.key === "Enter" || e.key === " ")) {
             e.preventDefault()
             setIsExpanded(!isExpanded)
           }
         }}
-        aria-expanded={isExpanded}
+        aria-expanded={hasExpandableContent ? isExpanded : undefined}
         aria-label={`${isExpanded ? "Collapse" : "Expand"} status details`}
-        className="flex items-center justify-between pr-1 pl-3 h-8 cursor-pointer hover:bg-muted/50 transition-colors duration-150 focus:outline-none rounded-sm"
+        className={cn(
+          "flex items-center justify-between pr-1 pl-3 h-8 transition-colors duration-150 focus:outline-none rounded-sm",
+          hasExpandableContent ? "cursor-pointer hover:bg-muted/50" : "cursor-default"
+        )}
       >
         <div className="flex items-center gap-2 text-xs flex-1 min-w-0">
-          {/* Expand/Collapse chevron - always show */}
-          <ChevronDown
-            className={cn(
-              "w-4 h-4 text-muted-foreground transition-transform duration-200",
-              !isExpanded && "-rotate-90",
-            )}
-          />
+          {/* Expand/Collapse chevron - only show when there are files to expand */}
+          {hasExpandableContent && (
+            <ChevronDown
+              className={cn(
+                "w-4 h-4 text-muted-foreground transition-transform duration-200",
+                !isExpanded && "-rotate-90",
+              )}
+            />
+          )}
 
           {/* Streaming indicator */}
           {isBusy && (

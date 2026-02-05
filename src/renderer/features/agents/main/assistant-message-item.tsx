@@ -35,6 +35,7 @@ import {
   getMessageTextContent,
 } from "../ui/message-action-buttons"
 import { useFileOpen } from "../mentions"
+import { GitActivityBadges } from "../ui/git-activity-badges"
 import { MemoizedTextPart } from "./memoized-text-part"
 
 // Exploring tools - these get grouped when 3+ consecutive
@@ -740,6 +741,9 @@ export const AssistantMessageItem = memo(function AssistantMessageItem({
           <AgentMessageUsage metadata={msgMetadata} isStreaming={isStreaming} isMobile={isMobile} />
         </div>
       )}
+
+      {/* Git activity badges - commit/PR pills */}
+      {(!isStreaming || !isLastMessage) && <GitActivityBadges parts={messageParts} chatId={chatId} subChatId={subChatId} />}
 
       {isDev && showMessageJson && (
         <div className="px-2 mt-2">

@@ -135,6 +135,7 @@ import {
   QUESTIONS_SKIPPED_MESSAGE,
   selectedAgentChatIdAtom,
   selectedCommitAtom,
+  diffActiveTabAtom,
   selectedDiffFilePathAtom,
   setLoading,
   subChatFilesAtom,
@@ -1157,8 +1158,8 @@ const DiffSidebarContent = memo(function DiffSidebarContent({
   const [isChangesPanelCollapsed, setIsChangesPanelCollapsed] = useAtom(agentsChangesPanelCollapsedAtom)
   const [isResizing, setIsResizing] = useState(false)
 
-  // Active tab state (Changes/History)
-  const [activeTab, setActiveTab] = useState<"changes" | "history">("changes")
+  // Active tab state (Changes/History) - atom so external components can switch tabs
+  const [activeTab, setActiveTab] = useAtom(diffActiveTabAtom)
 
   // Register the reset function so handleCloseDiff can reset to "changes" tab before closing
   // This prevents React 19 ref cleanup issues with HistoryView's ContextMenu components
@@ -1287,6 +1288,7 @@ const DiffSidebarContent = memo(function DiffSidebarContent({
           )}>
             <ChangesPanel
               worktreePath={worktreePath}
+              activeTab={activeTab}
               selectedFilePath={selectedFilePath}
               onFileSelect={handleDiffFileSelect}
               onFileOpenPinned={() => {}}
@@ -1401,6 +1403,7 @@ const DiffSidebarContent = memo(function DiffSidebarContent({
         >
           <ChangesPanel
             worktreePath={worktreePath}
+            activeTab={activeTab}
             selectedFilePath={selectedFilePath}
             onFileSelect={handleDiffFileSelect}
             onFileOpenPinned={() => {}}
@@ -5689,7 +5692,8 @@ Make sure to preserve all functionality from both branches when resolving confli
   // Stable callbacks for DiffSidebarHeader to prevent re-renders
   const handleRefreshGitStatus = useCallback(() => {
     refetchGitStatus()
-  }, [refetchGitStatus])
+    scheduleDiffRefresh()
+  }, [refetchGitStatus, scheduleDiffRefresh])
 
   const handleExpandAll = useCallback(() => {
     diffViewRef.current?.expandAll()

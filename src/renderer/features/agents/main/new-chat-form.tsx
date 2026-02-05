@@ -1813,7 +1813,7 @@ export function NewChatForm({
                                 ) : (
                                   <>
                                     {selectedModel?.name}{" "}
-                                    <span className="text-muted-foreground">4.5</span>
+                                    <span className="text-muted-foreground">{selectedModel?.version}</span>
                                   </>
                                 )}
                               </span>
@@ -1836,7 +1836,7 @@ export function NewChatForm({
                                     <ClaudeCodeIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                     <span>
                                       {model.name}{" "}
-                                      <span className="text-muted-foreground">4.5</span>
+                                      <span className="text-muted-foreground">{model.version}</span>
                                     </span>
                                   </div>
                                   {isSelected && (

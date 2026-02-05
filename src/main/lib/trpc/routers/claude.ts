@@ -1181,10 +1181,10 @@ export const claudeRouter = router({
             // Existing CLI config takes precedence over OAuth
             const finalEnv = {
               ...claudeEnv,
-              // ...(claudeCodeToken &&
-              //   !hasExistingApiConfig && {
-              //     CLAUDE_CODE_OAUTH_TOKEN: claudeCodeToken,
-              //   }),
+              ...(claudeCodeToken &&
+                !hasExistingApiConfig && {
+                  CLAUDE_CODE_OAUTH_TOKEN: claudeCodeToken,
+                }),
               // Re-enable CLAUDE_CONFIG_DIR now that we properly map MCP configs
               CLAUDE_CONFIG_DIR: isolatedConfigDir,
             }
@@ -1536,9 +1536,7 @@ ${prompt}
                   Object.keys(mcpServersFiltered).length > 0 && {
                     mcpServers: mcpServersFiltered,
                   }),
-                env: {
-                  ...finalEnv,
-                },
+                env: finalEnv,
                 permissionMode:
                   input.mode === "plan"
                     ? ("plan" as const)

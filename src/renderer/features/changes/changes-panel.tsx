@@ -5,6 +5,8 @@ import type { CommitInfo } from "./components/history-view";
 
 interface ChangesPanelProps {
 	worktreePath: string;
+	/** Controlled active tab for ChangesView */
+	activeTab?: "changes" | "history";
 	/** Currently selected file path for highlighting */
 	selectedFilePath?: string | null;
 	/** Callback when a file is selected */
@@ -43,6 +45,7 @@ interface ChangesPanelProps {
 
 export function ChangesPanel({
 	worktreePath,
+	activeTab,
 	selectedFilePath,
 	onFileSelect,
 	onFileOpenPinned,
@@ -70,6 +73,7 @@ export function ChangesPanel({
 		<div className="flex flex-col h-full overflow-hidden">
 			<ChangesView
 				worktreePath={worktreePath}
+				activeTab={activeTab}
 				selectedFilePath={selectedFilePath}
 				onFileSelect={onFileSelect}
 				onFileOpenPinned={onFileOpenPinned}
